@@ -3,6 +3,8 @@
 import { Message } from '@/lib/ai/types';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from 'next-themes';
+import { ImageMessage } from './ImageMessage';
+import { AnalysisMessage } from './AnalysisMessage';
 
 export function MessageList({ messages }: { messages: Message[] }) {
   const { theme } = useTheme();
@@ -25,7 +27,22 @@ export function MessageList({ messages }: { messages: Message[] }) {
                 : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
             }`}
           >
-            {message.role === 'assistant' ? (
+            {/* Display Image if present */}
+            {message.imageUrl && (
+                <div className="mb-3">
+                    <ImageMessage imageUrl={message.imageUrl} />
+                </div>
+            )}
+
+            {/* Display Analysis if present */}
+            {message.analysis && (
+                 <div className="mb-3">
+                     <AnalysisMessage analysis={message.analysis} />
+                 </div>
+            )}
+
+            {/* Display Text Content */}
+            {message.role === 'assistant' && !message.analysis ? (
               <ReactMarkdown
                 components={{
                   code({ node, className, children, ...props }) {
@@ -65,7 +82,7 @@ export function MessageList({ messages }: { messages: Message[] }) {
                 {message.content}
               </ReactMarkdown>
             ) : (
-              <p className="whitespace-pre-wrap">{message.content}</p>
+                message.content && <p className="whitespace-pre-wrap">{message.content}</p>
             )}
           </div>
         </div>

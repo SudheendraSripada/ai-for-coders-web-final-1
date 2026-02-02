@@ -1,4 +1,4 @@
-import { AIProvider, Message, ModelInfo, ChatOptions, ChatResponse, AIProviderConfig } from '../types';
+import { AIProvider, Message, ModelInfo, ChatOptions, ChatResponse, AIProviderConfig, AnalysisResult } from '../types';
 
 export class AnthropicProvider implements AIProvider {
   providerName = 'anthropic';
@@ -22,6 +22,7 @@ export class AnthropicProvider implements AIProvider {
         provider: 'anthropic',
         contextWindow: 200000,
         maxTokens: 4096,
+        supportsVision: true,
       },
       {
         id: 'claude-3-sonnet-20240229',
@@ -29,6 +30,7 @@ export class AnthropicProvider implements AIProvider {
         provider: 'anthropic',
         contextWindow: 200000,
         maxTokens: 4096,
+        supportsVision: true,
       },
       {
         id: 'claude-3-haiku-20240307',
@@ -36,6 +38,7 @@ export class AnthropicProvider implements AIProvider {
         provider: 'anthropic',
         contextWindow: 200000,
         maxTokens: 4096,
+        supportsVision: true,
       },
     ];
   }
@@ -96,6 +99,106 @@ export class AnthropicProvider implements AIProvider {
       return this.handleStreamingResponse(response, model);
     } else {
       return this.handleRegularResponse(response, model);
+    }
+  }
+
+  async analyzeImage(imageData: string, model: string, prompt?: string): Promise<AnalysisResult> {
+    if (!this.validateApiKey(this.apiKey)) {
+      throw new Error('Invalid Anthropic API key');
+    }
+
+    const systemPrompt = `You are an expert software engineer and code reviewer. 
+    Analyze the attached screenshot or image code.
+    Identify any errors, bugs, or improvements.
+    Provide a structured response in JSON format with the following fields:
+    - text: A general summary of the analysis (markdown supported)
+    - errors: An array of strings describing specific errors found (with line numbers if applicable)
+    - warnings: An array of strings describing potential issues or warnings
+    - suggestions: An array of strings describing suggestions for improvement
+    - code: (Optional) corrected code snippet if applicable
+    
+    IMPORTANT: Return ONLY valid JSON.`;
+
+    const userPrompt = prompt || "Analyze this screenshot for errors and code issues.";
+
+    // Handle imageData to get media_type and base64
+    let media_type = 'image/jpeg';
+    let data = imageData;
+    
+    if (imageData.startsWith('data:')) {
+        const matches = imageData.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+            media_type = matches[1];
+            data = matches[2];
+        }
+    }
+
+    const messages = [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type,
+              data
+            }
+          },
+          {
+            type: "text",
+            text: userPrompt
+          }
+        ]
+      }
+    ];
+
+    const url = `${this.baseUrl}/messages`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model,
+        system: systemPrompt,
+        messages,
+        max_tokens: 4096,
+        temperature: 0.4,
+      }),
+    });
+
+    if (!response.ok) {
+       const errorData = await response.json().catch(() => ({}));
+       throw new Error(errorData.error?.message || 'Anthropic API request failed');
+    }
+
+    const resData = await response.json();
+    const content = resData.content[0].text;
+
+     // Clean up markdown code blocks if present
+    const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
+
+    try {
+      const parsed = JSON.parse(jsonStr);
+      return {
+        text: parsed.text || "Analysis complete",
+        errors: parsed.errors || [],
+        warnings: parsed.warnings || [],
+        suggestions: parsed.suggestions || [],
+        code: parsed.code
+      };
+    } catch (e) {
+      console.error("Failed to parse JSON response from Anthropic", e);
+      return {
+        text: content,
+        errors: [],
+        warnings: [],
+        suggestions: []
+      };
     }
   }
 

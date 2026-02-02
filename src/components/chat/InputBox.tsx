@@ -2,14 +2,17 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { CornerDownLeft, Mic, Paperclip, Send } from 'lucide-react';
+import { CaptureButton } from './CaptureButton';
 
 export function InputBox({ 
   onSend, 
+  onCapture,
   isLoading, 
   disabled, 
   placeholder = 'Type your message...'
 }: { 
   onSend: (content: string) => void; 
+  onCapture?: (imageData: string) => void;
   isLoading: boolean; 
   disabled?: boolean; 
   placeholder?: string;
@@ -51,10 +54,13 @@ export function InputBox({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={isLoading || disabled}
-            className="w-full min-h-[44px] max-h-[200px] resize-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent overflow-y-auto"
+            className="w-full min-h-[44px] max-h-[200px] resize-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 pr-24 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent overflow-y-auto"
             rows={1}
           />
           <div className="absolute right-2 bottom-2 flex gap-1">
+            {onCapture && (
+               <CaptureButton onCapture={onCapture} disabled={disabled || isLoading} />
+            )}
             <button
               type="button"
               disabled={isLoading || disabled}
