@@ -28,7 +28,7 @@ export function MessageList({ messages }: { messages: Message[] }) {
             {message.role === 'assistant' ? (
               <ReactMarkdown
                 components={{
-                  code({ node, className, children, ...props }) {
+                  code({ className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     const isInline = className === undefined || className === '';
                     

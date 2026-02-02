@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { CornerDownLeft, Mic, Paperclip, Send } from 'lucide-react';
+import { Mic, Paperclip, Send } from 'lucide-react';
 
 export function InputBox({ 
   onSend, 
