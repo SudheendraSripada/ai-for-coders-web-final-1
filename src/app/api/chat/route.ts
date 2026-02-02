@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AIManager } from '@/lib/ai/ai-manager';
-import { Message } from '@/lib/ai/types';
+import { Message, ProviderType } from '@/lib/ai/types';
 
 export async function POST(request: Request) {
   try {
@@ -37,9 +37,9 @@ export async function POST(request: Request) {
 
     // Initialize AI Manager and provider
     const aiManager = new AIManager();
-    
+
     try {
-      aiManager.initializeProvider(provider as any, { 
+      aiManager.initializeProvider(provider as ProviderType, {
         apiKey,
         baseUrl: process.env[`${provider.toUpperCase()}_BASE_URL`]
       });
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     // Validate API key
-    const isValidKey = aiManager.validateApiKey(provider as any, apiKey);
+    const isValidKey = aiManager.validateApiKey(provider as ProviderType, apiKey);
     if (!isValidKey) {
       return NextResponse.json(
         { error: 'Invalid API key for the specified provider' },
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     // Check if model is available
-    const modelInfo = aiManager.getModelInfo(model, provider as any);
+    const modelInfo = aiManager.getModelInfo(model, provider as ProviderType);
     if (!modelInfo) {
       return NextResponse.json(
         { error: `Model ${model} not available for provider ${provider}` },
@@ -84,11 +84,18 @@ export async function POST(request: Request) {
             ...options,
             stream: true,
             signal: request.signal,
+            onChunk: (chunk: string) => {
+              // Stream each chunk to the client as it arrives
+              const chunkData = JSON.stringify({
+                content: chunk,
+              });
+              writer.write(encoder.encode(chunkData + '\n'));
+            },
           };
 
           // Get the provider instance to access streaming methods directly
-          const providerInstance = aiManager.getProvider(provider as any);
-          
+          const providerInstance = aiManager.getProvider(provider as ProviderType);
+
           // Check if the provider supports streaming for this model
           const supportsStreaming = providerInstance.supportsStreaming(model);
           if (!supportsStreaming) {
@@ -103,34 +110,15 @@ export async function POST(request: Request) {
             chatOptions
           );
 
-          // For streaming, we need to handle the response differently
-          // Since the providers return the full response even with stream=true,
-          // we'll simulate streaming by sending chunks
-          const fullContent = response.content;
-          const chunkSize = 50; // Send content in chunks
-          
-          for (let i = 0; i < fullContent.length; i += chunkSize) {
-            const chunk = fullContent.slice(i, i + chunkSize);
-            const chunkData = JSON.stringify({
-              content: chunk,
-              model: response.model,
-              provider: response.provider,
-            });
-            
-            await writer.write(encoder.encode(chunkData + '\n'));
-            
-            // Small delay to simulate streaming
-            await new Promise(resolve => setTimeout(resolve, 10));
-          }
-
           // Send completion marker
           const completionData = JSON.stringify({
             finishReason: response.finishReason,
             model: response.model,
             provider: response.provider,
+            usage: response.usage,
           });
           await writer.write(encoder.encode(completionData + '\n'));
-          
+
           await writer.close();
 
         } catch (error) {
@@ -139,7 +127,7 @@ export async function POST(request: Request) {
       })();
 
       return new NextResponse(readable, {
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
         },
@@ -155,7 +143,7 @@ export async function POST(request: Request) {
       const response = await aiManager.chat(
         messages as Message[],
         model,
-        provider as any,
+        provider as ProviderType,
         chatOptions
       );
 

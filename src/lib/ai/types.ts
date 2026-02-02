@@ -18,6 +18,7 @@ export interface ChatOptions {
   maxTokens?: number;
   stream?: boolean;
   signal?: AbortSignal;
+  onChunk?: (chunk: string) => void;
 }
 
 export interface ChatResponse {

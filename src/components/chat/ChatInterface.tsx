@@ -13,7 +13,7 @@ export function ChatInterface() {
   const [error, setError] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>('gpt-3.5-turbo');
   const [selectedProvider, setSelectedProvider] = useState<string>('openai');
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKeys, setApiKeys] = useState<{[key: string]: string}>({});
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -25,6 +25,14 @@ export function ChatInterface() {
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
+
+    // Check if we have an API key for the selected provider
+    const apiKey = apiKeys[selectedProvider];
+    if (!apiKey) {
+      setError(`Please set your ${selectedProvider.toUpperCase()} API key first`);
+      setShowApiKeyInput(true);
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -122,7 +130,11 @@ export function ChatInterface() {
     setSelectedProvider(provider);
   };
 
-  const handleApiKeySubmit = () => {
+  const handleApiKeySubmit = (key: string) => {
+    setApiKeys(prev => ({
+      ...prev,
+      [selectedProvider]: key,
+    }));
     setShowApiKeyInput(false);
   };
 
@@ -206,11 +218,11 @@ export function ChatInterface() {
 
         {/* Input Box */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          <InputBox 
+          <InputBox
             onSend={handleSendMessage}
             isLoading={isLoading}
-            disabled={!apiKey}
-            placeholder={apiKey ? 'Type your message...' : 'Please set your API key first'}
+            disabled={!apiKeys[selectedProvider]}
+            placeholder={apiKeys[selectedProvider] ? 'Type your message...' : 'Please set your API key first'}
           />
         </div>
       </div>
@@ -225,8 +237,11 @@ export function ChatInterface() {
             <div className="space-y-4">
               <input
                 type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                value={apiKeys[selectedProvider] || ''}
+                onChange={(e) => setApiKeys(prev => ({
+                  ...prev,
+                  [selectedProvider]: e.target.value,
+                }))}
                 placeholder={`Enter your ${selectedProvider.toUpperCase()} API key`}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
@@ -238,7 +253,7 @@ export function ChatInterface() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleApiKeySubmit}
+                  onClick={() => handleApiKeySubmit(apiKeys[selectedProvider] || '')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Save

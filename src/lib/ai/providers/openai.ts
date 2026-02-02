@@ -54,7 +54,7 @@ export class OpenAIProvider implements AIProvider {
     ];
   }
 
-  supportsStreaming(model: string): boolean {
+  supportsStreaming(_model: string): boolean {
     return true; // All OpenAI models support streaming
   }
 
@@ -99,7 +99,7 @@ export class OpenAIProvider implements AIProvider {
     }
 
     if (options?.stream) {
-      return this.handleStreamingResponse(response, model);
+      return this.handleStreamingResponse(response, model, options);
     } else {
       return this.handleRegularResponse(response, model);
     }
@@ -121,7 +121,7 @@ export class OpenAIProvider implements AIProvider {
     };
   }
 
-  private async handleStreamingResponse(response: Response, model: string): Promise<ChatResponse> {
+  private async handleStreamingResponse(response: Response, model: string, options?: ChatOptions): Promise<ChatResponse> {
     const reader = response.body?.getReader();
     if (!reader) {
       throw new Error('No response body available for streaming');
@@ -144,7 +144,12 @@ export class OpenAIProvider implements AIProvider {
         try {
           const data = JSON.parse(dataStr);
           if (data.choices && data.choices[0].delta.content) {
-            fullContent += data.choices[0].delta.content;
+            const content = data.choices[0].delta.content;
+            fullContent += content;
+            // Call the chunk callback if provided
+            if (options?.onChunk) {
+              options.onChunk(content);
+            }
           }
         } catch (error) {
           console.error('Error parsing stream chunk:', error);

@@ -40,7 +40,7 @@ export class AnthropicProvider implements AIProvider {
     ];
   }
 
-  supportsStreaming(model: string): boolean {
+  supportsStreaming(_model: string): boolean {
     return true; // Anthropic supports streaming
   }
 
@@ -93,7 +93,7 @@ export class AnthropicProvider implements AIProvider {
     }
 
     if (options?.stream) {
-      return this.handleStreamingResponse(response, model);
+      return this.handleStreamingResponse(response, model, options);
     } else {
       return this.handleRegularResponse(response, model);
     }
@@ -115,7 +115,7 @@ export class AnthropicProvider implements AIProvider {
     };
   }
 
-  private async handleStreamingResponse(response: Response, model: string): Promise<ChatResponse> {
+  private async handleStreamingResponse(response: Response, model: string, options?: ChatOptions): Promise<ChatResponse> {
     const reader = response.body?.getReader();
     if (!reader) {
       throw new Error('No response body available for streaming');
@@ -138,7 +138,12 @@ export class AnthropicProvider implements AIProvider {
         try {
           const data = JSON.parse(dataStr);
           if (data.type === 'content_block_delta' && data.delta.text) {
-            fullContent += data.delta.text;
+            const content = data.delta.text;
+            fullContent += content;
+            // Call the chunk callback if provided
+            if (options?.onChunk) {
+              options.onChunk(content);
+            }
           }
         } catch (error) {
           console.error('Error parsing stream chunk:', error);

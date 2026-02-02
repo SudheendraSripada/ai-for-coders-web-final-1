@@ -34,7 +34,7 @@ export class GeminiProvider implements AIProvider {
     ];
   }
 
-  supportsStreaming(model: string): boolean {
+  supportsStreaming(_model: string): boolean {
     return true; // Gemini supports streaming
   }
 
@@ -59,7 +59,7 @@ export class GeminiProvider implements AIProvider {
       parts: [{ text: message.content }],
     }));
 
-    const url = `${this.baseUrl}/models/${model}:generateContent`;
+    const url = `${this.baseUrl}/models/${model}:streamGenerateContent`;
     const params = new URLSearchParams({
       key: this.apiKey,
     });
@@ -102,6 +102,14 @@ export class GeminiProvider implements AIProvider {
       throw new Error(errorData.error?.message || 'Gemini API request failed');
     }
 
+    if (options?.stream) {
+      return this.handleStreamingResponse(response, model, options);
+    } else {
+      return this.handleRegularResponse(response, model);
+    }
+  }
+
+  private async handleRegularResponse(response: Response, model: string): Promise<ChatResponse> {
     const data = await response.json();
 
     // Extract the response text
@@ -112,6 +120,47 @@ export class GeminiProvider implements AIProvider {
       model,
       provider: this.providerName,
       finishReason: data.candidates?.[0]?.finishReason || 'stop',
+    };
+  }
+
+  private async handleStreamingResponse(response: Response, model: string, options?: ChatOptions): Promise<ChatResponse> {
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body available for streaming');
+    }
+
+    let fullContent = '';
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n').filter(line => line.trim().length > 0);
+
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line);
+          if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            const content = data.candidates[0].content.parts[0].text;
+            fullContent += content;
+            // Call the chunk callback if provided
+            if (options?.onChunk) {
+              options.onChunk(content);
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing stream chunk:', error);
+        }
+      }
+    }
+
+    return {
+      content: fullContent,
+      model,
+      provider: this.providerName,
+      finishReason: 'stop',
     };
   }
 }
