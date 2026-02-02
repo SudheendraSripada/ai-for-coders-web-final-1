@@ -11,6 +11,7 @@ export function ImageMessage({ imageUrl }: ImageMessageProps) {
   return (
     <>
       <div className="relative group max-w-sm rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
           src={imageUrl} 
           alt="Captured screenshot" 
@@ -42,6 +43,7 @@ export function ImageMessage({ imageUrl }: ImageMessageProps) {
                 </button>
             </div>
             <div className="flex-1 overflow-auto flex justify-center items-center">
+                 {/* eslint-disable-next-line @next/next/no-img-element */}
                  <img 
                   src={imageUrl} 
                   alt="Captured screenshot full size" 

@@ -20,11 +20,12 @@ export function useScreenShare() {
   const startScreenShare = useCallback(async () => {
     setError(null);
     try {
-      // @ts-expect-error - cursor property is not standard in MediaTrackConstraints but supported by some browsers
       const mediaStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
+            // cursor is supported by some browsers
             cursor: "always"
-        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         audio: false
       });
       

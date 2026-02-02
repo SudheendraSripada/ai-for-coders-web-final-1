@@ -78,6 +78,7 @@ export function CaptureButton({ onCapture, disabled }: CaptureButtonProps) {
             
             <div className="p-4 overflow-auto flex-1 bg-gray-100 dark:bg-gray-900 flex justify-center">
               {previewUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
                   src={previewUrl} 
                   alt="Screenshot preview" 
