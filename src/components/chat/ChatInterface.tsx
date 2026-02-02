@@ -162,8 +162,22 @@ export function ChatInterface() {
                   Welcome to Multi-Model AI Chat
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 max-w-md">
-                  Start a conversation with AI models from OpenAI, Google Gemini, or Anthropic Claude.
+                  Chat with cutting-edge AI models from OpenAI (GPT), Google Gemini, and Anthropic Claude.
                 </p>
+                <div className="flex justify-center gap-4 mt-4">
+                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span className="text-sm font-medium">OpenAI</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span className="text-sm font-medium">Gemini</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                    <span className="text-sm font-medium">Claude</span>
+                  </div>
+                </div>
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={() => setShowApiKeyInput(true)}

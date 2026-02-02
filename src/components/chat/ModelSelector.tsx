@@ -114,13 +114,20 @@ export function ModelSelector({
                         onModelChange(model.id, group.provider);
                         setIsOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group relative ${
                         selectedModel === model.id && selectedProvider === group.provider
                           ? 'bg-blue-50 dark:bg-blue-900/30'
                           : ''
                       }`}
                     >
-                      <span className="text-gray-900 dark:text-white">{model.name}</span>
+                      <div className="flex-1">
+                        <div className="text-gray-900 dark:text-white font-medium">{model.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {model.contextWindow.toLocaleString()} context • {model.maxTokens.toLocaleString()} max tokens
+                          {model.supportsVision && <span className="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded text-xs">Vision</span>}
+                          {model.supportsTools && <span className="ml-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-1 py-0.5 rounded text-xs">Tools</span>}
+                        </div>
+                      </div>
                       {selectedModel === model.id && selectedProvider === group.provider && (
                         <Check size={16} className="text-blue-600" />
                       )}

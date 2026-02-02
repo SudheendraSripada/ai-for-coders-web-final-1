@@ -74,47 +74,76 @@ export async function POST(request: Request) {
     if (stream) {
       // Create a transform stream to handle streaming responses
       const { readable, writable } = new TransformStream();
-      const writer = writable.getWriter();
       const encoder = new TextEncoder();
 
-      try {
-        const chatOptions = {
-          ...options,
-          stream: true,
-          signal: request.signal,
-        };
+      // Handle the streaming response in a separate async function
+      (async () => {
+        const writer = writable.getWriter();
+        try {
+          const chatOptions = {
+            ...options,
+            stream: true,
+            signal: request.signal,
+          };
 
-        const response = await aiManager.chat(
-          messages as Message[],
-          model,
-          provider as any,
-          chatOptions
-        );
+          // Get the provider instance to access streaming methods directly
+          const providerInstance = aiManager.getProvider(provider as any);
+          
+          // Check if the provider supports streaming for this model
+          const supportsStreaming = providerInstance.supportsStreaming(model);
+          if (!supportsStreaming) {
+            await writer.abort(new Error('Streaming not supported for this model'));
+            return;
+          }
 
-        // Send the response as a stream
-        const responseText = JSON.stringify({ 
-          content: response.content, 
-          model: response.model, 
-          provider: response.provider, 
-          finishReason: response.finishReason 
-        });
+          // Call the provider's chat method with streaming enabled
+          const response = await providerInstance.chat(
+            messages as Message[],
+            model,
+            chatOptions
+          );
 
-        await writer.write(encoder.encode(responseText));
-        await writer.close();
+          // For streaming, we need to handle the response differently
+          // Since the providers return the full response even with stream=true,
+          // we'll simulate streaming by sending chunks
+          const fullContent = response.content;
+          const chunkSize = 50; // Send content in chunks
+          
+          for (let i = 0; i < fullContent.length; i += chunkSize) {
+            const chunk = fullContent.slice(i, i + chunkSize);
+            const chunkData = JSON.stringify({
+              content: chunk,
+              model: response.model,
+              provider: response.provider,
+            });
+            
+            await writer.write(encoder.encode(chunkData + '\n'));
+            
+            // Small delay to simulate streaming
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
 
-        return new NextResponse(readable, {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-          },
-        });
-      } catch (error) {
-        await writer.abort(error instanceof Error ? error : new Error('Streaming error'));
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Unknown streaming error' },
-          { status: 500 }
-        );
-      }
+          // Send completion marker
+          const completionData = JSON.stringify({
+            finishReason: response.finishReason,
+            model: response.model,
+            provider: response.provider,
+          });
+          await writer.write(encoder.encode(completionData + '\n'));
+          
+          await writer.close();
+
+        } catch (error) {
+          await writer.abort(error instanceof Error ? error : new Error('Streaming error'));
+        }
+      })();
+
+      return new NextResponse(readable, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+      });
     } else {
       // Regular (non-streaming) response
       const chatOptions = {
