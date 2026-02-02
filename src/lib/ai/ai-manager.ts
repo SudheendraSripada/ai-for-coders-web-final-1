@@ -112,7 +112,7 @@ export class AIManager {
       const defaultProvider = this.getDefaultProvider();
       const providerInstance = this.getProvider(defaultProvider);
       return providerInstance.getModels()[0]?.id || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }

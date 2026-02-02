@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { AIManager } from '@/lib/ai/ai-manager';
+import { ProviderType, ModelInfo } from '@/lib/ai/types';
 
 export function ModelSelector({ 
   selectedModel, 
@@ -14,7 +15,7 @@ export function ModelSelector({
   onModelChange: (model: string, provider: string) => void; 
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [models, setModels] = useState<{provider: string; models: any[]}[]>([]);
+  const [models, setModels] = useState<{provider: string; models: ModelInfo[]}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,11 +30,11 @@ export function ModelSelector({
         
         for (const provider of providers) {
           try {
-            aiManager.initializeProvider(provider as any, { 
+            aiManager.initializeProvider(provider as ProviderType, { 
               apiKey: 'dummy-key-for-model-listing',
             });
             
-            const providerModels = aiManager.getModelsByProvider(provider as any);
+            const providerModels = aiManager.getModelsByProvider(provider as ProviderType);
             modelsByProvider.push({
               provider,
               models: providerModels,

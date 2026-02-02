@@ -121,7 +121,7 @@ export function ChatInterface() {
                   return newMessages;
                 });
               }
-            } catch (parseError) {
+            } catch {
               // Ignore parse errors for partial chunks
             }
         }

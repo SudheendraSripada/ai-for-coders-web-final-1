@@ -34,7 +34,7 @@ export class GeminiProvider implements AIProvider {
     ];
   }
 
-  supportsStreaming(model: string): boolean {
+  supportsStreaming(): boolean {
     return true; // Gemini supports streaming
   }
 

@@ -6,9 +6,21 @@ export function useScreenShare() {
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const stopScreenShare = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+      setIsSharing(false);
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [stream]);
+
   const startScreenShare = useCallback(async () => {
     setError(null);
     try {
+      // @ts-expect-error - cursor property is not standard in MediaTrackConstraints but supported by some browsers
       const mediaStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
             cursor: "always"
@@ -41,18 +53,7 @@ export function useScreenShare() {
       }
       setIsSharing(false);
     }
-  }, []);
-
-  const stopScreenShare = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-      setIsSharing(false);
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    }
-  }, [stream]);
+  }, [stopScreenShare]);
 
   // Cleanup on unmount
   useEffect(() => {

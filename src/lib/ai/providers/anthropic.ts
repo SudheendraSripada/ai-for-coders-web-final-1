@@ -43,7 +43,7 @@ export class AnthropicProvider implements AIProvider {
     ];
   }
 
-  supportsStreaming(model: string): boolean {
+  supportsStreaming(): boolean {
     return true; // Anthropic supports streaming
   }
 

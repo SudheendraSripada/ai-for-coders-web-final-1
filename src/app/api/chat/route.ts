@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AIManager } from '@/lib/ai/ai-manager';
-import { Message } from '@/lib/ai/types';
+import { Message, ProviderType } from '@/lib/ai/types';
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const aiManager = new AIManager();
     
     try {
-      aiManager.initializeProvider(provider as any, { 
+      aiManager.initializeProvider(provider as ProviderType, { 
         apiKey,
         baseUrl: process.env[`${provider.toUpperCase()}_BASE_URL`]
       });
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     // Validate API key
-    const isValidKey = aiManager.validateApiKey(provider as any, apiKey);
+    const isValidKey = aiManager.validateApiKey(provider as ProviderType, apiKey);
     if (!isValidKey) {
       return NextResponse.json(
         { error: 'Invalid API key for the specified provider' },
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     // Check if model is available
-    const modelInfo = aiManager.getModelInfo(model, provider as any);
+    const modelInfo = aiManager.getModelInfo(model, provider as ProviderType);
     if (!modelInfo) {
       return NextResponse.json(
         { error: `Model ${model} not available for provider ${provider}` },
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
           };
 
           // Get the provider instance to access streaming methods directly
-          const providerInstance = aiManager.getProvider(provider as any);
+          const providerInstance = aiManager.getProvider(provider as ProviderType);
           
           // Check if the provider supports streaming for this model
           const supportsStreaming = providerInstance.supportsStreaming(model);
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
       const response = await aiManager.chat(
         messages as Message[],
         model,
-        provider as any,
+        provider as ProviderType,
         chatOptions
       );
 

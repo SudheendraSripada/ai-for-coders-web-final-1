@@ -56,7 +56,7 @@ export class OpenAIProvider implements AIProvider {
     ];
   }
 
-  supportsStreaming(model: string): boolean {
+  supportsStreaming(): boolean {
     return true; // All OpenAI models support streaming
   }
 
