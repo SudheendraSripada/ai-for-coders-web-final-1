@@ -1,6 +1,8 @@
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  imageUrl?: string;
+  analysis?: AnalysisResult;
 }
 
 export interface ModelInfo {
@@ -32,12 +34,22 @@ export interface ChatResponse {
   };
 }
 
+export interface AnalysisResult {
+  text: string;
+  errors: string[];
+  warnings: string[];
+  suggestions: string[];
+  code?: string;
+}
+
 export interface AIProvider {
   providerName: string;
   
   getModels(): ModelInfo[];
   
   chat(messages: Message[], model: string, options?: ChatOptions): Promise<ChatResponse>;
+
+  analyzeImage?(imageData: string, model: string, prompt?: string): Promise<AnalysisResult>;
   
   supportsStreaming(model: string): boolean;
   
